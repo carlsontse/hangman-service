@@ -2,6 +2,7 @@ package com.carlsoncorp.hangmanservice.service
 
 import com.carlsoncorp.hangmanservice.model.Game
 import com.carlsoncorp.hangmanservice.service.exception.DuplicateWrongGuessException
+import com.carlsoncorp.hangmanservice.service.exception.GameAlreadyOverException
 import com.carlsoncorp.hangmanservice.service.exception.GameNotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -32,16 +33,22 @@ class HangmanService {
         }
 
         val newGame = Game(maxNumberOfGuesses, secretWord)
-        games[newGame.id] = newGame
+        games[newGame.getId()] = newGame
+
+        LOGGER.info("Starting a new game w/ id {}, maxNumberOfGuesses {}, secretWord {}", newGame.getId(),
+            maxNumberOfGuesses, secretWord)
+
         return newGame
     }
 
     /**
+     * Lookup the game
+     * @param id Unique identifier for the game
      * @throws GameNotFoundException
      */
     fun getGame(id: String): Game {
         // look up in db
-        val game = games.get(id)
+        val game = games[id]
 
         if (game != null) {
             return game
@@ -52,40 +59,35 @@ class HangmanService {
     }
 
     /**
+     * Get all the games.
+     * TODO: can support filtering
+     */
+    fun getGames(isActive: Boolean): ArrayList<Game> =
+        ArrayList(games.values)
+
+    /**
      * Perform a guess
+     * @param guessLetter letter being guessed. Assumption is that it's lower case.
      * @throws DuplicateWrongGuessException
      */
     fun guess(guessLetter: Char, gameId: String, sessionId: String): Game {
-        // handle same letter guesses, handle invalid inputs
+
         val game = getGame(gameId)
 
         // check if the game is already finished
         if (game.isGameOver()) {
-            throw GameAlreadyOverException(game.state) // todo: indicate if already won or lost number of guesses
+            LOGGER.info("Can't guess the letter because game w/ id {} is already over.", gameId)
+            throw GameAlreadyOverException(game.getState())
         }
 
-        val wrongGuessesList = game.wrongGuessesList
-
-        if (!wrongGuessesList.contains(guessLetter)) { // This is technically a constant lookup since we're fixed set of letters
-
-            val secretWord = game.secretWord
-            var guessingWordTracker = game.guessingWordTracker
-
-            for (charIndex in secretWord.indices) {
-                if (secretWord[charIndex].toLowerCase() === guessLetter) { // ignore the case on the secret word
-                    // if it matches then flip it in the guessWordTracker
-                    guessingWordTracker[charIndex] = secretWord[charIndex] // Keep the original case
-                }
-            }
-
-            //if guess is wrong
-
-            // O(N) with the dynamic array resizing
-            wrongGuessesList.add(guessLetter)
+        if (!game.hasAlreadyGuessedLetter(guessLetter)) {
+            game.updateGuessWordTracker(guessLetter)
+            //todo: not sure at this time if we need to indicate the game is over if the number of guesses reached the max. The game state
+            // will be returned.
         } else { // it's already been guessed wrong
+            LOGGER.info("The letter {} was already guessed wrong for game w/ id {}.", guessLetter, gameId)
             throw DuplicateWrongGuessException()
         }
-
 
         return game
     }
