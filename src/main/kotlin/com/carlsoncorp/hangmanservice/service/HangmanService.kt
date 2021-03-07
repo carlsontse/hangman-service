@@ -26,16 +26,18 @@ class HangmanService {
         }
 
         if (secretWordInput == null) {
-            // randomly generate a word or hardcode for now
+            // randomly generate a word or hardcode for now TODO: instructions say read from file but can fallback as well to
+                // a library
             secretWord = "carlson"
         } else {
             secretWord = secretWordInput
         }
 
-        val newGame = Game(maxNumberOfGuesses, secretWord)
+        //TODO: properly fill out the sessionId
+        val newGame = Game(maxNumberOfGuesses, secretWord, "tempSessionid")
         games[newGame.getId()] = newGame
 
-        LOGGER.info("Starting a new game w/ id {}, maxNumberOfGuesses {}, secretWord {}", newGame.getId(),
+        LOGGER.info("Starting a new game w/ id ({}), maxNumberOfGuesses ({}), secretWord ({})", newGame.getId(),
             maxNumberOfGuesses, secretWord)
 
         return newGame
@@ -76,16 +78,14 @@ class HangmanService {
 
         // check if the game is already finished
         if (game.isGameOver()) {
-            LOGGER.info("Can't guess the letter because game w/ id {} is already over.", gameId)
+            LOGGER.info("Can't guess the letter because game w/ id ({}) is already over.", gameId)
             throw GameAlreadyOverException(game.getState())
         }
 
         if (!game.hasAlreadyGuessedLetter(guessLetter)) {
             game.updateGuessWordTracker(guessLetter)
-            //todo: not sure at this time if we need to indicate the game is over if the number of guesses reached the max. The game state
-            // will be returned.
         } else { // it's already been guessed wrong
-            LOGGER.info("The letter {} was already guessed wrong for game w/ id {}.", guessLetter, gameId)
+            LOGGER.info("The letter ({}) was already guessed wrong for game w/ id ({}).", guessLetter, gameId)
             throw DuplicateWrongGuessException()
         }
 

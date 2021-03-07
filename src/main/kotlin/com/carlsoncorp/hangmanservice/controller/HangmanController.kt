@@ -1,6 +1,8 @@
 package com.carlsoncorp.hangmanservice.controller
 
 import com.carlsoncorp.hangmanservice.controller.model.Context
+import com.carlsoncorp.hangmanservice.controller.model.GuessRequest
+import com.carlsoncorp.hangmanservice.controller.model.NewGameRequest
 import com.carlsoncorp.hangmanservice.model.Game
 import com.carlsoncorp.hangmanservice.model.GameState
 import com.carlsoncorp.hangmanservice.service.HangmanService
@@ -8,6 +10,7 @@ import com.carlsoncorp.hangmanservice.service.exception.DuplicateWrongGuessExcep
 import com.carlsoncorp.hangmanservice.service.exception.GameAlreadyOverException
 import com.carlsoncorp.hangmanservice.service.exception.GameNotFoundException
 import io.swagger.annotations.*
+import io.swagger.models.Response
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Controller
@@ -24,14 +27,23 @@ class HangmanController(private val hangmanService: HangmanService) {
     @ResponseBody
     @ApiOperation("Returns list of all Games in the system.")
     @ApiResponses(
-        ApiResponse( code = 200, message = "OK")
+        ApiResponse( code = 200, message = "OK"),
+        ApiResponse( code = 422, message = "Invalid new game request")
     )
-    fun newGame(@RequestBody(required = false) maxNumberOfGuesses: Int?,
-                @RequestBody(required = false) secretWord: String?,
-                @RequestBody(required = true) context: Context
-    ): com.carlsoncorp.hangmanservice.controller.model.Game {
+    fun newGame(@RequestBody(required = false) newGameRequest: NewGameRequest)
+                                            : com.carlsoncorp.hangmanservice.controller.model.Game {
         // could do some validation to make sure secretWord fits the locale
-        val game = hangmanService.createNewGame(maxNumberOfGuesses, secretWord)
+
+        if (newGameRequest.maxNumberOfGuesses != null && newGameRequest.maxNumberOfGuesses <= 0) {
+            throw ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Invalid max number of guesses")
+        }
+
+        // If the secret word was set but it's empty or full of white characters
+        if (newGameRequest.secretWord?.isBlank() == true) {
+            throw ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Invalid max number of guesses")
+        }
+
+        val game = hangmanService.createNewGame(newGameRequest.maxNumberOfGuesses, newGameRequest.secretWord?.trim())
         return mapInternalGameToExternal(game)
     }
 
@@ -66,29 +78,30 @@ class HangmanController(private val hangmanService: HangmanService) {
         }
     }
 
-    // Guessing is a PUT to me because it's idempotent.
+    // 'Guessing' is a PUT to me because it's an idempotent operation.
     @PutMapping(path = ["/games/{id}/guess"], consumes = ["application/json"], produces = ["application/json"] )
     @ResponseBody
-    @ApiOperation("Returns list of all Games in the system.")
+    @ApiOperation("Perform a guess on the specified Hangman game.")
     @ApiResponses(
         ApiResponse( code = 200, message = "OK"),
-        ApiResponse( code = 422, message = "Invalid user input"),
-        ApiResponse( code = 422, message = "Invalid user asdfasdfa")
+        ApiResponse( code = 400, message = "Game is already over"),
+        ApiResponse( code = 404, message = "Game not found"),
+        ApiResponse( code = 422, message = "Invalid guess")
     )
+    //TODO: CONTEXT!!
     fun guess(@PathVariable("id") gameId: String,
-              @RequestBody(required = true) letter: String,
-              @RequestBody(required = true) context: Context): com.carlsoncorp.hangmanservice.controller.model.Game {
+              @RequestBody(required = true) guessRequest: GuessRequest): com.carlsoncorp.hangmanservice.controller.model.Game {
 
         // Guesses don't matter if it's lower or upper case. No need to null check since it's required field. TODO: double check this!
-        var lowerCaseLetter = letter.toLowerCase()
+        var lowerCaseLetter = guessRequest.letter?.toLowerCase()
 
         // Validate the guess, this would change when locale needs to be supported.
-        if (lowerCaseLetter.isNullOrBlank() || lowerCaseLetter.length > 1 || lowerCaseLetter[0] in 'b'..'z') {
+        if (lowerCaseLetter.isNullOrBlank() || lowerCaseLetter.length > 1 || lowerCaseLetter[0] !in 'a'..'z') {
             throw ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Guess is not a letter.")
         }
 
         try {
-            val game = hangmanService.guess(lowerCaseLetter[0], gameId, context.sessionId)
+            val game = hangmanService.guess(lowerCaseLetter[0], gameId, "TESTSESSIONID")
             return mapInternalGameToExternal(game)
         } catch(gmfe: GameNotFoundException) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Unable to find the game.")
@@ -96,7 +109,7 @@ class HangmanController(private val hangmanService: HangmanService) {
             throw ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Duplicate wrong guess, try a different letter.")
         } catch(gaoe: GameAlreadyOverException) {
             // TODO: figure out how to let the client know the game was won vs failed - they may want to customize a msg.
-            throw ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Game is already completed. ")
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Game is already completed. ")
         }
         //TODO: could prob use Spring exception handlers but for now doing it here
     }
@@ -110,7 +123,7 @@ class HangmanController(private val hangmanService: HangmanService) {
         com.carlsoncorp.hangmanservice.controller.model.Game(
             game.getId(),
             game.getGuessingWordTracker(),
-            game.getWrongGuesses().toCharArray(),
+            game.getWrongGuesses().map { it.guessLetter }.toCharArray(), // Only return the wrong guess letter back
             game.getState().toString(),
             game.getNumberOfRemainingGuesses()
         )

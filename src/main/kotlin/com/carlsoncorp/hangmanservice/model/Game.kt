@@ -1,6 +1,5 @@
 package com.carlsoncorp.hangmanservice.model
 
-import com.carlsoncorp.hangmanservice.service.HangmanService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -10,7 +9,9 @@ enum class GameState {
 }
 
 class Game(private val maxNumberOfGuesses: Int,
-           private val secretWord: String) {
+           private val secretWord: String,
+           // 'Who' started the game
+           private val sessionId: String) {
 
     final val LOGGER: Logger = LoggerFactory.getLogger(Game::javaClass.javaClass)
     final val DEFAULT_MASK_CHAR = '*'
@@ -26,11 +27,10 @@ class Game(private val maxNumberOfGuesses: Int,
     /** We could fix this to an array of size 26 but to keep the game extensible such as taking numbers, or
         punctuation characters in the future it's a worthy tradeoff.
     **/
-    private var wrongGuessesList: ArrayList<Char> = ArrayList<Char>()
+    private var wrongGuessesList: ArrayList<Guess> = ArrayList<Guess>()
 
     // Track the word being guessed
     private var guessingWordTracker: CharArray
-
 
     // Forward thinking.
     // TBH i have no idea how hangman in other languages would even work...
@@ -82,22 +82,39 @@ class Game(private val maxNumberOfGuesses: Int,
 
         // if guess is wrong
         if (!foundGuessLetter) {
-            LOGGER.info("Guess letter {} is wrong w/ game id {}", guessLetter, id)
+            LOGGER.info("Guess letter ({}) is wrong w/ game id ({})", guessLetter, id)
             addWrongGuess(guessLetter)
         } else {
             // guess was right
-            LOGGER.info("Guess letter {} is right w/ game id {}. New tracker string = {}", guessLetter, id, guessingWordTracker)
+            LOGGER.info("Guess letter ({}) is right w/ game id ({}). New tracker string = {}", guessLetter, id, guessingWordTracker)
+            // check if the game has been won
+            if (!anymoreLettersToFind()) {
+                LOGGER.info("Word ({}) has been completely revealed and game w/ id ({}) is over!",
+                    secretWord, id)
+                endGame(GameState.GAME_OVER_WIN)
+            }
         }
     }
 
+    /**
+     * Game is won when there are no more of the DEFAULT_TRACKER_MASK in the tracker string
+     */
+    private fun anymoreLettersToFind(): Boolean =
+        guessingWordTracker.contains(DEFAULT_MASK_CHAR)
+
     fun hasAlreadyGuessedLetter(guessLetter: Char) =
-        wrongGuessesList.contains(guessLetter) // This is technically a constant lookup since we're fixed set of letters
+        wrongGuessesList.stream().anyMatch{ t -> t.guessLetter === guessLetter}
 
     private fun addWrongGuess(guessLetter: Char) {
-        wrongGuessesList.add(guessLetter)
+        //todo: get the session ID
+        wrongGuessesList.add(Guess(
+            guessLetter,
+            System.currentTimeMillis(),
+            "tempSessionId"
+        ))
 
         if (wrongGuessesList.size === maxNumberOfGuesses) {
-            LOGGER.info("Number of wrong guesses has reached the max of {} w/ game id {}. Game over!",
+            LOGGER.info("Number of wrong guesses has reached the max of ({}) w/ game id ({}). Game over!",
                 maxNumberOfGuesses, id)
             endGame(GameState.GAME_OVER_LOSS)
         }
