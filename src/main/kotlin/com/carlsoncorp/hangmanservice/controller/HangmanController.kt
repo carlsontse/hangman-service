@@ -31,8 +31,8 @@ class HangmanController(private val hangmanService: HangmanService) {
         ApiResponse( code = 200, message = "OK"),
         ApiResponse( code = 422, message = "Invalid new game request")
     )
-    fun newGame(@ApiParam("Unique session id to identify a 'user")
-                @RequestHeader("x-session-id") sessionId: String,
+    fun newGame(@ApiParam("Unique session id to identify a 'user", required = true)
+                @RequestHeader("x-session-id", required = true) sessionId: String,
                 @RequestBody(required = false) newGameRequest: NewGameRequest)
                                             : com.carlsoncorp.hangmanservice.controller.model.Game {
         // could do some validation to make sure secretWord fits the locale
@@ -97,10 +97,10 @@ class HangmanController(private val hangmanService: HangmanService) {
         ApiResponse( code = 404, message = "Game not found"),
         ApiResponse( code = 422, message = "Invalid guess")
     )
-    fun guess(@ApiParam("Unique identifier for a game")
-                @PathVariable("id") gameId: String,
-              @ApiParam("Unique session id to identify a 'user' making the guess")
-                @RequestHeader("x-session-id") sessionId: String,
+    fun guess(@ApiParam("Unique identifier for a game", required = true)
+                @PathVariable("id", required = true) gameId: String,
+              @ApiParam("Unique session id to identify a 'user' making the guess", required = true)
+                @RequestHeader("x-session-id", required = true) sessionId: String,
               @RequestBody(required = true) guessRequest: GuessRequest): com.carlsoncorp.hangmanservice.controller.model.Game {
 
         // Guesses don't matter if it's lower or upper case. No need to null check since it's required field. TODO: double check this!
@@ -138,7 +138,8 @@ class HangmanController(private val hangmanService: HangmanService) {
             game.getGuessingWordTracker(),
             game.getWrongGuesses().map { it.guessLetter }.toCharArray(), // Only return the wrong guess letter back
             game.getState().toString(),
-            game.getNumberOfRemainingGuesses()
+            game.getNumberOfRemainingGuesses(),
+            game.getNextPlayer()
         )
 
 }

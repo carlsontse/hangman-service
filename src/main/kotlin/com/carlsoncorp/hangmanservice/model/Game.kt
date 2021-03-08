@@ -33,7 +33,8 @@ class Game(private val maxNumberOfGuesses: Int,
 
     /** Track the active session players as a stack. The notes say only 2 players but let's make it extensible.
      **/
-    // Whenever someone 'loads' the game with a new sessionId, we assume it's a 'player entered' state
+    // Whenever someone 'loads' the game with a new sessionId, we assume it's a 'player entered' state.
+    // For now, storing as a String but we could expand this to a 'Player' class as we evolve the game.
     private var players: ArrayList<String> = ArrayList<String>()
     // Track the active player as the index of the players list
     private var activePlayerIndex: Int
@@ -146,12 +147,18 @@ class Game(private val maxNumberOfGuesses: Int,
         state === GameState.GAME_OVER_LOSS || state === GameState.GAME_OVER_WIN
 
     /**
-     * Add new player if they are not currently in the game.
+     * Add new player if they are not currently in the game and only if the game is not over.
      * @param sessionId player identifier
      */
     fun addPlayerIfNew(sessionId: String) {
-        if (!players.contains(sessionId)) {
+        // no need to throw exception if game is over, the state captures the game state.
+        if (!players.contains(sessionId) && !isGameOver()) {
+            LOGGER.info("New player entered the game w/ id ({}) for game /w id ({}).", sessionId, id)
             players.add(sessionId)
+        }
+        
+        if (isGameOver()) {
+            LOGGER.info("Tried to add a new player w/ id ({}) when the game w/ id ({}) is already over.", sessionId, id)
         }
     }
 

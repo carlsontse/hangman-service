@@ -22,5 +22,9 @@ data class Game(
     val gameState: String,
 
     @ApiModelProperty(notes = "Indicates the number of guesses left until the game is over.", example = "8", required = true, position = 4)
-    val numGuessesLeft: Int
+    val numGuessesLeft: Int,
+
+    @ApiModelProperty(notes = "Unique identifier to indicate which player's turn. For now, it's a session id",
+        example = "b2eb5388-19e4-45f9-b02e-ebaae4b22ddd", required = true, position = 5)
+    val playerTurn: String
 )
