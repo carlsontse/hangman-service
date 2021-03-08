@@ -32,7 +32,7 @@ class HangmanController(private val hangmanService: HangmanService) {
                                             : com.carlsoncorp.hangmanservice.controller.model.Game {
         // could do some validation to make sure secretWord fits the locale
 
-        if (newGameRequest.maxNumberOfGuesses != null && newGameRequest.maxNumberOfGuesses <= 0) {
+        if (newGameRequest.maxNumberOfGuesses != null && newGameRequest.maxNumberOfGuesses!! <= 0) {
             throw ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Invalid max number of guesses.")
         }
 
@@ -129,14 +129,16 @@ class HangmanController(private val hangmanService: HangmanService) {
      * @param game Internal representation of the game of Hangman.
      * @return Game External representation of the game of Hangman, contains everything the client needs to know.
      */
-    private fun mapInternalGameToExternal(game: com.carlsoncorp.hangmanservice.model.Game): com.carlsoncorp.hangmanservice.controller.model.Game =
-        com.carlsoncorp.hangmanservice.controller.model.Game(
-            game.getId(),
-            game.getGuessingWordTracker(),
-            game.getWrongGuesses().map { it.guessLetter }.toCharArray(), // Only return the wrong guess letter back
-            game.getState().toString(),
-            game.getNumberOfRemainingGuesses(),
-            game.getNextPlayer()
-        )
+    private fun mapInternalGameToExternal(game: com.carlsoncorp.hangmanservice.model.Game): com.carlsoncorp.hangmanservice.controller.model.Game {
+        val externalGame = com.carlsoncorp.hangmanservice.controller.model.Game()
+        externalGame.id = game.getId()
+        externalGame.guessingWordTracker = game.getGuessingWordTracker()
+        externalGame.wrongGuesses = game.getWrongGuesses().map { it.guessLetter }.toCharArray() // Only return the wrong guess letter back
+        externalGame.gameState = game.getState().toString()
+        externalGame.numGuessesLeft = game.getNumberOfRemainingGuesses()
+        externalGame.playerTurn = game.getNextPlayer()
+
+        return externalGame
+    }
 
 }

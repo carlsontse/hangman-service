@@ -41,9 +41,10 @@ class HangmanService {
             maxNumberOfGuesses, secretWord)
 
         // Remove the player from any other previous game they were associated with
-        //TODO: this is not working!! fix!
-        games.values.stream().map {
-            it.removePlayerIfFound(sessionId)
+        games.values.map {
+            if (it.getId() != newGame.getId()) { // don't remove the player from the new game just created
+                it.removePlayerIfFound(sessionId)
+            }
         }
 
         return newGame

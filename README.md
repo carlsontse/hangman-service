@@ -7,7 +7,17 @@ player 1 makes the guess that player 2 then gets to guess after. (Another option
 abandoned and player 2 continues playing with himself. 
 
 ## How To
+### Prerequisites
+* JDK 12
+* Maven 3.6.1 
 
+### Run tests
+`mvn test`
+
+### Run locally w/ Maven
+`mvn spring-boot:run`
+
+### Access Swagger
 
 
 

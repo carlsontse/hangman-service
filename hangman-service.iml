@@ -144,5 +144,7 @@
     <orderEntry type="library" name="Maven: io.prometheus:simpleclient_common:0.9.0" level="project" />
     <orderEntry type="library" name="Maven: io.prometheus:simpleclient:0.9.0" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Maven: org.springframework.boot:spring-boot-devtools:2.4.3" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: junit:junit:4.13.2" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.hamcrest:hamcrest-core:2.2" level="project" />
   </component>
 </module>
