@@ -1,27 +1,21 @@
 package com.carlsoncorp.hangmanservice.controller
 
-import com.carlsoncorp.hangmanservice.controller.model.Context
 import com.carlsoncorp.hangmanservice.controller.model.GuessRequest
 import com.carlsoncorp.hangmanservice.controller.model.NewGameRequest
-import com.carlsoncorp.hangmanservice.model.Game
-import com.carlsoncorp.hangmanservice.model.GameState
 import com.carlsoncorp.hangmanservice.service.HangmanService
 import com.carlsoncorp.hangmanservice.service.exception.DuplicateWrongGuessException
 import com.carlsoncorp.hangmanservice.service.exception.GameAlreadyOverException
 import com.carlsoncorp.hangmanservice.service.exception.GameNotFoundException
 import com.carlsoncorp.hangmanservice.service.exception.NotPlayerTurnException
 import io.swagger.annotations.*
-import io.swagger.models.Response
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Controller
-import org.springframework.ui.Model
-import org.springframework.ui.set
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 
 @Controller
 @Api(description = "Set of endpoints for Creating, Getting and Playing games of Hangman.")
+//TODO: We can also add other x- headers for device, browser, etc for analytics.
 class HangmanController(private val hangmanService: HangmanService) {
 
     @PostMapping(path = ["/games"], produces = ["application/json"] )
@@ -29,21 +23,22 @@ class HangmanController(private val hangmanService: HangmanService) {
     @ApiOperation("Returns list of all Games in the system.")
     @ApiResponses(
         ApiResponse( code = 200, message = "OK"),
+        ApiResponse( code = 400, message = "Bad Request"),
         ApiResponse( code = 422, message = "Invalid new game request")
     )
-    fun newGame(@ApiParam("Unique session id to identify a 'user", required = true)
-                @RequestHeader("x-session-id", required = true) sessionId: String,
+    fun newGame(@ApiParam("Unique session id to identify a player creating the game.", required = true)
+                    @RequestHeader("x-session-id", required = true) sessionId: String,
                 @RequestBody(required = false) newGameRequest: NewGameRequest)
                                             : com.carlsoncorp.hangmanservice.controller.model.Game {
         // could do some validation to make sure secretWord fits the locale
 
         if (newGameRequest.maxNumberOfGuesses != null && newGameRequest.maxNumberOfGuesses <= 0) {
-            throw ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Invalid max number of guesses")
+            throw ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Invalid max number of guesses.")
         }
 
         // If the secret word was set but it's empty or full of white characters
         if (newGameRequest.secretWord?.isBlank() == true) {
-            throw ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Invalid max number of guesses")
+            throw ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Invalid secret word.")
         }
 
         val game = hangmanService.createNewGame(sessionId, newGameRequest.maxNumberOfGuesses,
@@ -71,9 +66,10 @@ class HangmanController(private val hangmanService: HangmanService) {
     @ApiOperation("Returns a single game by its identifier.")
     @ApiResponses(
         ApiResponse( code = 200, message = "OK"),
+        ApiResponse( code = 400, message = "Bad Request"),
         ApiResponse( code = 404, message = "Game not found")
     )
-    fun getGameById(@ApiParam("Unique session id to identify a 'user")
+    fun getGameById(@ApiParam("Unique session id to identify a player entering the game")
                         @RequestHeader("x-session-id") sessionId: String,
                     @ApiParam("Unique game identifier as a guid")
                         @PathVariable("id") id: String): com.carlsoncorp.hangmanservice.controller.model.Game {
@@ -92,14 +88,15 @@ class HangmanController(private val hangmanService: HangmanService) {
     @ApiOperation("Perform a guess on the specified Hangman game.")
     @ApiResponses(
         ApiResponse( code = 200, message = "OK"),
-        ApiResponse( code = 400, message = "Game is already over"),
+        ApiResponse( code = 400, message = "Bad Request"),
         ApiResponse( code = 403, message = "Not player turn"),
         ApiResponse( code = 404, message = "Game not found"),
+        ApiResponse( code = 406, message = "Game is already over"),
         ApiResponse( code = 422, message = "Invalid guess")
     )
     fun guess(@ApiParam("Unique identifier for a game", required = true)
                 @PathVariable("id", required = true) gameId: String,
-              @ApiParam("Unique session id to identify a 'user' making the guess", required = true)
+              @ApiParam("Unique session id to identify a player making the guess.", required = true)
                 @RequestHeader("x-session-id", required = true) sessionId: String,
               @RequestBody(required = true) guessRequest: GuessRequest): com.carlsoncorp.hangmanservice.controller.model.Game {
 
@@ -120,7 +117,7 @@ class HangmanController(private val hangmanService: HangmanService) {
             throw ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Duplicate wrong guess, try a different letter.")
         } catch(gaoe: GameAlreadyOverException) {
             // TODO: figure out how to let the client know the game was won vs failed - they may want to customize a msg.
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Game is already completed.")
+            throw ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "Game is already completed.")
         } catch(npte: NotPlayerTurnException) {
             throw ResponseStatusException(HttpStatus.FORBIDDEN, "Not the player turn.")
         }

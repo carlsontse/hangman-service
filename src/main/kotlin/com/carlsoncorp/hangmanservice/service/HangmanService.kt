@@ -41,6 +41,7 @@ class HangmanService {
             maxNumberOfGuesses, secretWord)
 
         // Remove the player from any other previous game they were associated with
+        //TODO: this is not working!! fix!
         games.values.stream().map {
             it.removePlayerIfFound(sessionId)
         }
@@ -49,17 +50,19 @@ class HangmanService {
     }
 
     /**
-     * Lookup the game and also add the player if it's a newly detected sessionId.
+     * Lookup the game and also add the player if it's a newly detected valid sessionId.
      * @param id Unique identifier for the game
-     * @param sessionId Unique session identifier. Could indicate a new player.
+     * @param sessionId Unique session identifier. Could indicate a new player. If null just return the game.
      * @throws GameNotFoundException
      */
-    fun getGame(id: String, sessionId: String): Game {
+    fun getGame(id: String, sessionId: String?): Game {
         // look up in db
         val game = games[id]
 
         if (game != null) {
-            game.addPlayerIfNew(sessionId)
+            if (sessionId != null) {
+                game.addPlayerIfNew(sessionId)
+            }
             return game
         } else {
             LOGGER.info("Unable to find game with id {}", id)
@@ -84,7 +87,8 @@ class HangmanService {
     //TODO: think of some multi threading cases regarding the players and guessing!!
     fun guess(guessLetter: Char, gameId: String, sessionId: String): Game {
 
-        val game = getGame(gameId, sessionId)
+        // Make sure to not add the player to the game in case of a random player not part of the game guessing
+        val game = getGame(gameId, null)
 
         // check if the game is already finished
         if (game.isGameOver()) {
@@ -93,13 +97,15 @@ class HangmanService {
         }
 
         if (!game.isPlayerTurn(sessionId)) {
+            //TODO: not doing it for now but we may want to differentiate a player that's not even in the game as well as
+            // a different error msg. For now though this covers that case as well.
             LOGGER.info("Player ({}) tried to take a turn that is not their turn. Expected next player ({}) for game" +
-                    " w/ id ({}) is already over.", sessionId, game.getNextPlayer(), gameId)
+                    " w/ id ({}).", sessionId, game.getNextPlayer(), gameId)
             throw NotPlayerTurnException()
         }
 
         if (!game.hasAlreadyGuessedLetter(guessLetter)) {
-            game.updateGuessWordTracker(guessLetter)
+            game.updateGuessWordTracker(guessLetter, sessionId)
         } else { // it's already been guessed wrong
             LOGGER.info("The letter ({}) was already guessed wrong for game w/ id ({}).", guessLetter, gameId)
             throw DuplicateWrongGuessException()

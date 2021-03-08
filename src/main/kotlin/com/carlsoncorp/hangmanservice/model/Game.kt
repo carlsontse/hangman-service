@@ -75,9 +75,10 @@ class Game(private val maxNumberOfGuesses: Int,
     /**
      * Update the guess word tracker if the letter is found, if not then add to the wrong guesses list.
      * @param guessLetter letter being guessed
+     * @param sessionId Unique player identifier
      *
      */
-    fun updateGuessWordTracker(guessLetter: Char) {
+    fun updateGuessWordTracker(guessLetter: Char, sessionId: String) {
 
         lastGuessTimeMs = System.currentTimeMillis()
 
@@ -87,7 +88,7 @@ class Game(private val maxNumberOfGuesses: Int,
         // TODO: could prob do something fancy here to keep track of the correctly guessed letters to save the O(N)
         // in case someone keeps guessing the same letter for no reason, it's an edge case.
         for (charIndex in secretWord.indices) {
-            if (secretWord[charIndex].toLowerCase() === guessLetter) { // ignore the case on the secret word
+            if (secretWord[charIndex].toLowerCase() == guessLetter) { // ignore the case on the secret word
                 // if it matches then flip it in the guessWordTracker.
                 guessingWordTracker[charIndex] = secretWord[charIndex] // Keep the original case
                 foundGuessLetter = true
@@ -97,7 +98,7 @@ class Game(private val maxNumberOfGuesses: Int,
         // if guess is wrong
         if (!foundGuessLetter) {
             LOGGER.info("Guess letter ({}) is wrong w/ game id ({})", guessLetter, id)
-            addWrongGuess(guessLetter)
+            addWrongGuess(guessLetter, sessionId)
         } else {
             // guess was right
             LOGGER.info("Guess letter ({}) is right w/ game id ({}). New tracker string = {}", guessLetter, id, guessingWordTracker)
@@ -121,17 +122,17 @@ class Game(private val maxNumberOfGuesses: Int,
         guessingWordTracker.contains(DEFAULT_MASK_CHAR)
 
     fun hasAlreadyGuessedLetter(guessLetter: Char) =
-        wrongGuessesList.stream().anyMatch{ t -> t.guessLetter === guessLetter}
+        wrongGuessesList.stream().anyMatch{ t -> t.guessLetter == guessLetter}
 
-    private fun addWrongGuess(guessLetter: Char) {
+    private fun addWrongGuess(guessLetter: Char, sessionId: String) {
         //todo: get the session ID
         wrongGuessesList.add(Guess(
             guessLetter,
             System.currentTimeMillis(),
-            "tempSessionId"
+            sessionId
         ))
 
-        if (wrongGuessesList.size === maxNumberOfGuesses) {
+        if (wrongGuessesList.size == maxNumberOfGuesses) {
             LOGGER.info("Number of wrong guesses has reached the max of ({}) w/ game id ({}). Game over!",
                 maxNumberOfGuesses, id)
             endGame(GameState.GAME_OVER_LOSS)
@@ -144,7 +145,7 @@ class Game(private val maxNumberOfGuesses: Int,
     }
 
     fun isGameOver(): Boolean =
-        state === GameState.GAME_OVER_LOSS || state === GameState.GAME_OVER_WIN
+        state == GameState.GAME_OVER_LOSS || state == GameState.GAME_OVER_WIN
 
     /**
      * Add new player if they are not currently in the game and only if the game is not over.
@@ -156,7 +157,7 @@ class Game(private val maxNumberOfGuesses: Int,
             LOGGER.info("New player entered the game w/ id ({}) for game /w id ({}).", sessionId, id)
             players.add(sessionId)
         }
-        
+
         if (isGameOver()) {
             LOGGER.info("Tried to add a new player w/ id ({}) when the game w/ id ({}) is already over.", sessionId, id)
         }
@@ -167,7 +168,7 @@ class Game(private val maxNumberOfGuesses: Int,
      * @param sessionId player identifier
      */
     fun isPlayerTurn(sessionId: String): Boolean =
-        players[activePlayerIndex] === sessionId
+        players[activePlayerIndex] == sessionId
 
     /**
      * Get the next player's turn's identifier
