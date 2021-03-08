@@ -10,10 +10,10 @@ enum class GameState {
 
 class Game(private val maxNumberOfGuesses: Int,
            private val secretWord: String,
-           // 'Who' started the game
-           private val sessionId: String) {
+           // 'Who' started the game.
+           private val creatorSessionId: String) {
 
-    final val LOGGER: Logger = LoggerFactory.getLogger(Game::javaClass.javaClass)
+    final val LOGGER: Logger = LoggerFactory.getLogger(Game::class.java)
     final val DEFAULT_MASK_CHAR = '*'
 
     private val id: String = UUID.randomUUID().toString()
@@ -28,9 +28,17 @@ class Game(private val maxNumberOfGuesses: Int,
         punctuation characters in the future it's a worthy tradeoff.
     **/
     private var wrongGuessesList: ArrayList<Guess> = ArrayList<Guess>()
-
     // Track the word being guessed
     private var guessingWordTracker: CharArray
+
+    /** Track the active session players as a stack. The notes say only 2 players but let's make it extensible.
+     **/
+    // Whenever someone 'loads' the game with a new sessionId, we assume it's a 'player entered' state
+    private var players: ArrayList<String> = ArrayList<String>()
+    // Track the active player as the index of the players list
+    private var activePlayerIndex: Int
+    // Forward thinking: A player could 'abandon' a game by just leaving it alone or closing browser, we should have a
+    // time limit to move and remove them as a player when the time has elapsed.
 
     // Forward thinking.
     // TBH i have no idea how hangman in other languages would even work...
@@ -41,6 +49,11 @@ class Game(private val maxNumberOfGuesses: Int,
     init {
         // initialize the guessing word tracker to same length as the secret word and initalize to the default char
         guessingWordTracker = CharArray(secretWord.length) {DEFAULT_MASK_CHAR}
+
+        // initialize the active player to the person that created the game
+        players.add(creatorSessionId)
+        // when the game starts we expect the creator to make the first move
+        activePlayerIndex = 0
     }
 
     fun getId() =
@@ -94,6 +107,10 @@ class Game(private val maxNumberOfGuesses: Int,
                 endGame(GameState.GAME_OVER_WIN)
             }
         }
+
+        // advance the expected player to the next person
+        //todo: think about the race/thread conditions here as well, the players could change as we remove them or they join
+        activePlayerIndex = (activePlayerIndex + 1) % players.size
     }
 
     /**
@@ -128,4 +145,45 @@ class Game(private val maxNumberOfGuesses: Int,
     fun isGameOver(): Boolean =
         state === GameState.GAME_OVER_LOSS || state === GameState.GAME_OVER_WIN
 
+    /**
+     * Add new player if they are not currently in the game.
+     * @param sessionId player identifier
+     */
+    fun addPlayerIfNew(sessionId: String) {
+        if (!players.contains(sessionId)) {
+            players.add(sessionId)
+        }
+    }
+
+    /**
+     * Determine if it is the specified player's turn.
+     * @param sessionId player identifier
+     */
+    fun isPlayerTurn(sessionId: String): Boolean =
+        players[activePlayerIndex] === sessionId
+
+    /**
+     * Get the next player's turn's identifier
+     * @return String next player turn's identifier
+     */
+    fun getNextPlayer(): String =
+        players[activePlayerIndex]
+
+    /**
+     * Remove the player if they are found in the game.
+     * @param sessionId player identifier
+     */
+    fun removePlayerIfFound(sessionId: String) {
+        val playerIndex = players.indexOf(sessionId)
+
+        if (playerIndex >= 0) { // player was found
+            // all elements get shifted down so no need to update the activePlayerIndex if the active player is the person
+            // being removed. Otherwise if it's not then we do need to update the activePlayerIndex
+            if (playerIndex !== activePlayerIndex && activePlayerIndex > 0) {
+                activePlayerIndex -= 1
+            }
+            players.remove(sessionId)
+
+        }
+    }
 }

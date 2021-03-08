@@ -9,6 +9,7 @@ import com.carlsoncorp.hangmanservice.service.HangmanService
 import com.carlsoncorp.hangmanservice.service.exception.DuplicateWrongGuessException
 import com.carlsoncorp.hangmanservice.service.exception.GameAlreadyOverException
 import com.carlsoncorp.hangmanservice.service.exception.GameNotFoundException
+import com.carlsoncorp.hangmanservice.service.exception.NotPlayerTurnException
 import io.swagger.annotations.*
 import io.swagger.models.Response
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,7 +31,9 @@ class HangmanController(private val hangmanService: HangmanService) {
         ApiResponse( code = 200, message = "OK"),
         ApiResponse( code = 422, message = "Invalid new game request")
     )
-    fun newGame(@RequestBody(required = false) newGameRequest: NewGameRequest)
+    fun newGame(@ApiParam("Unique session id to identify a 'user")
+                @RequestHeader("x-session-id") sessionId: String,
+                @RequestBody(required = false) newGameRequest: NewGameRequest)
                                             : com.carlsoncorp.hangmanservice.controller.model.Game {
         // could do some validation to make sure secretWord fits the locale
 
@@ -43,7 +46,9 @@ class HangmanController(private val hangmanService: HangmanService) {
             throw ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Invalid max number of guesses")
         }
 
-        val game = hangmanService.createNewGame(newGameRequest.maxNumberOfGuesses, newGameRequest.secretWord?.trim())
+        val game = hangmanService.createNewGame(sessionId, newGameRequest.maxNumberOfGuesses,
+            newGameRequest.secretWord?.trim())
+
         return mapInternalGameToExternal(game)
     }
 
@@ -68,10 +73,13 @@ class HangmanController(private val hangmanService: HangmanService) {
         ApiResponse( code = 200, message = "OK"),
         ApiResponse( code = 404, message = "Game not found")
     )
-    fun getGameById(@PathVariable("id") id: String): com.carlsoncorp.hangmanservice.controller.model.Game {
+    fun getGameById(@ApiParam("Unique session id to identify a 'user")
+                        @RequestHeader("x-session-id") sessionId: String,
+                    @ApiParam("Unique game identifier as a guid")
+                        @PathVariable("id") id: String): com.carlsoncorp.hangmanservice.controller.model.Game {
         //TODO: how to pass the Context to get API
         try {
-            val game = hangmanService.getGame(id)
+            val game = hangmanService.getGame(id, sessionId)
             return mapInternalGameToExternal(game)
         } catch(gmfe: GameNotFoundException) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Unable to find the game.")
@@ -85,11 +93,14 @@ class HangmanController(private val hangmanService: HangmanService) {
     @ApiResponses(
         ApiResponse( code = 200, message = "OK"),
         ApiResponse( code = 400, message = "Game is already over"),
+        ApiResponse( code = 403, message = "Not player turn"),
         ApiResponse( code = 404, message = "Game not found"),
         ApiResponse( code = 422, message = "Invalid guess")
     )
-    //TODO: CONTEXT!!
-    fun guess(@PathVariable("id") gameId: String,
+    fun guess(@ApiParam("Unique identifier for a game")
+                @PathVariable("id") gameId: String,
+              @ApiParam("Unique session id to identify a 'user' making the guess")
+                @RequestHeader("x-session-id") sessionId: String,
               @RequestBody(required = true) guessRequest: GuessRequest): com.carlsoncorp.hangmanservice.controller.model.Game {
 
         // Guesses don't matter if it's lower or upper case. No need to null check since it's required field. TODO: double check this!
@@ -101,7 +112,7 @@ class HangmanController(private val hangmanService: HangmanService) {
         }
 
         try {
-            val game = hangmanService.guess(lowerCaseLetter[0], gameId, "TESTSESSIONID")
+            val game = hangmanService.guess(lowerCaseLetter[0], gameId, sessionId)
             return mapInternalGameToExternal(game)
         } catch(gmfe: GameNotFoundException) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Unable to find the game.")
@@ -109,7 +120,9 @@ class HangmanController(private val hangmanService: HangmanService) {
             throw ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Duplicate wrong guess, try a different letter.")
         } catch(gaoe: GameAlreadyOverException) {
             // TODO: figure out how to let the client know the game was won vs failed - they may want to customize a msg.
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Game is already completed. ")
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Game is already completed.")
+        } catch(npte: NotPlayerTurnException) {
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Not the player turn.")
         }
         //TODO: could prob use Spring exception handlers but for now doing it here
     }
@@ -119,7 +132,7 @@ class HangmanController(private val hangmanService: HangmanService) {
      * @param game Internal representation of the game of Hangman.
      * @return Game External representation of the game of Hangman, contains everything the client needs to know.
      */
-    fun mapInternalGameToExternal(game: com.carlsoncorp.hangmanservice.model.Game): com.carlsoncorp.hangmanservice.controller.model.Game =
+    private fun mapInternalGameToExternal(game: com.carlsoncorp.hangmanservice.model.Game): com.carlsoncorp.hangmanservice.controller.model.Game =
         com.carlsoncorp.hangmanservice.controller.model.Game(
             game.getId(),
             game.getGuessingWordTracker(),
