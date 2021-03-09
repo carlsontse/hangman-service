@@ -1,4 +1,4 @@
-package com.carlsoncorp.hangmanservice
+package com.carlsoncorp.hangmanservice.mockmvc
 
 import com.carlsoncorp.hangmanservice.controller.model.NewGameRequest
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -85,10 +85,56 @@ class NewGameMockMvcTests {
 			.andDo(print())
 	}
 
+	@Test
+	@Throws(Exception::class)
+	fun test422_InvalidMaxNumberOfGuesses() {
+		var str: String
 
-	/**mockMvc!!.perform(get("/games").param("name", "Joe"))
-	.andExpect(status().isOk)
-	.andExpect(model().attribute("msg", "Hi there, Joe."))
-	.andExpect(view().name("hello-page"))
-	.andDo(print())*/
+		val newGameRequest = NewGameRequest()
+		newGameRequest.maxNumberOfGuesses = 0
+		newGameRequest.secretWord = "hi"
+
+		try {
+			str = ObjectMapper().writeValueAsString(newGameRequest)
+		} catch (e:Exception) {
+			throw RuntimeException(e)
+		}
+
+		val sessionId = "123"
+
+		mockMvc!!.perform(post("/games")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(str)
+			.header("x-session-id", sessionId))
+			.andExpect(status().isUnprocessableEntity)
+			.andExpect(status().reason(containsStringIgnoringCase("invalid max number of guesses")))
+			.andDo(print())
+	}
+
+	@Test
+	@Throws(Exception::class)
+	fun test422_InvalidSecretWord() {
+		var str: String
+
+		val newGameRequest = NewGameRequest()
+		newGameRequest.maxNumberOfGuesses = 2
+		newGameRequest.secretWord = ""
+
+		try {
+			str = ObjectMapper().writeValueAsString(newGameRequest)
+		} catch (e:Exception) {
+			throw RuntimeException(e)
+		}
+
+		val sessionId = "123"
+
+		mockMvc!!.perform(post("/games")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(str)
+			.header("x-session-id", sessionId))
+			.andExpect(status().isUnprocessableEntity)
+			.andExpect(status().reason(containsStringIgnoringCase("invalid secret word")))
+			.andDo(print())
+	}
+
 }

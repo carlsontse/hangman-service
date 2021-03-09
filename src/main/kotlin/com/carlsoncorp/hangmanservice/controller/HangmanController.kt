@@ -73,7 +73,6 @@ class HangmanController(private val hangmanService: HangmanService) {
                         @RequestHeader("x-session-id") sessionId: String,
                     @ApiParam("Unique game identifier as a guid")
                         @PathVariable("id") id: String): com.carlsoncorp.hangmanservice.controller.model.Game {
-        //TODO: how to pass the Context to get API
         try {
             val game = hangmanService.getGame(id, sessionId)
             return mapInternalGameToExternal(game)

@@ -72,6 +72,9 @@ class Game(private val maxNumberOfGuesses: Int,
     fun getNumberOfRemainingGuesses() =
         maxNumberOfGuesses - wrongGuessesList.size
 
+    fun getPlayers() =
+        players
+
     /**
      * Update the guess word tracker if the letter is found, if not then add to the wrong guesses list.
      * @param guessLetter letter being guessed
@@ -125,7 +128,6 @@ class Game(private val maxNumberOfGuesses: Int,
         wrongGuessesList.stream().anyMatch{ t -> t.guessLetter == guessLetter}
 
     private fun addWrongGuess(guessLetter: Char, sessionId: String) {
-        //todo: get the session ID
         wrongGuessesList.add(Guess(
             guessLetter,
             System.currentTimeMillis(),

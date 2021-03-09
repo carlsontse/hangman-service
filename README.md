@@ -14,6 +14,10 @@ abandoned and player 2 continues playing with himself.
 ### Run tests
 `mvn test`
 
+### View Jacoco report
+1. `mvn test jacoco:report`
+1. Open `/target/site/jacoco/index.html`
+
 ### Run locally w/ Maven
 `mvn spring-boot:run`
 
