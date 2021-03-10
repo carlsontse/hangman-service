@@ -7,6 +7,9 @@ player 1 makes the guess that player 2 then gets to guess after. (Another option
 abandoned and player 2 continues playing with himself. 
 
 ## Notes
+### Time Spent
+~ 10 hours
+
 ### REST decision
 * I went with REST because it serves web applications quite nicely w/ JSON responses and I also felt the APIs fit the REST model very well.
 * I prefer an API first approach which is to build out the Open API definitions first (instead of generating the swagger docs after implementation) 
@@ -42,5 +45,11 @@ would work just fine with representing the entities such as the Game and Guess. 
 Assuming port 8080, the url is: `http://localhost:8080/v1/hangman-service/swagger-ui.html`
 
 ## Operational Excellence
-- Add metrics interceptor that captures success & error metrics per API
-- All logs should be sent to output and ultimately to infrastructure. 
+* All metrics can be viewed here: `http://localhost:8080/v1/hangman-service/actuator/prometheus`. All the HTTP metrics are
+  already in there so you can see how many successful or failure calls per API. This is great for being able to setup alerts per API.
+  We can ship these metrics using some prometheus scraper in infrastructure and dump them to some time series DB.
+* All logs are sent to output and ultimately to infrastructure to handle the storage. 
+* There's an MDC filter that contains the session ID and we can use it to store other session/contextual stuff in there passed in the headers. 
+    These MDC values show up in the logs to help debug sessions.
+* I won't have time to do this but we can include a Docker file to build an image that just runs the Spring Boot Jar, or even better Maven
+has a plugin that will do this plus upload it to a Docker repository to plug into any CI.
