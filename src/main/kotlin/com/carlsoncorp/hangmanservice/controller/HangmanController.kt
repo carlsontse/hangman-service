@@ -56,7 +56,6 @@ class HangmanController(private val hangmanService: HangmanService) {
     fun getGames(@ApiParam("Filter only active games.")
                     @RequestParam("is_active", required = false, defaultValue = "false") isActive: Boolean)
                                                     : List<com.carlsoncorp.hangmanservice.controller.model.Game> {
-        //TODO: how to pass the Context to get API
         val games = hangmanService.getGames(isActive)
         return games.map { mapInternalGameToExternal(it) }
     }
@@ -99,7 +98,7 @@ class HangmanController(private val hangmanService: HangmanService) {
                 @RequestHeader("x-session-id", required = true) sessionId: String,
               @RequestBody(required = true) guessRequest: GuessRequest): com.carlsoncorp.hangmanservice.controller.model.Game {
 
-        // Guesses don't matter if it's lower or upper case. No need to null check since it's required field. TODO: double check this!
+        // Guesses don't matter if it's lower or upper case. No need to null check since it's required field.
         var lowerCaseLetter = guessRequest.letter?.toLowerCase()
 
         // Validate the guess, this would change when locale needs to be supported.

@@ -208,8 +208,14 @@ class Game(private val maxNumberOfGuesses: Int,
      * Get the next player's turn's identifier
      * @return String next player turn's identifier
      */
-    fun getNextPlayer(): String =
-        players[activePlayerIndex]
+    fun getNextPlayer(): String {
+        return if (players.size > 0) {
+            players[activePlayerIndex]
+        } else {
+            ""
+        }
+    }
+
 
     /**
      * Remove the player if they are found in the game.
