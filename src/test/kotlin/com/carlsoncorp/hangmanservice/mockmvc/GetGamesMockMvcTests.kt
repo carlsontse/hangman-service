@@ -90,7 +90,7 @@ class GetGamesMockMvcTests {
             .andDo(print())
     }
     **/
-
+/*
     @Test
     @Throws(Exception::class)
     fun testGetGames_returnOnlyActiveGame() {
@@ -127,6 +127,6 @@ class GetGamesMockMvcTests {
             .andExpect(jsonPath("$.[0].wrongGuesses", equalTo("")))
             .andExpect(jsonPath("$.[0].guessingWordTracker", equalTo("**")))
             .andDo(print())
-    }
+    }*/
 
 }
