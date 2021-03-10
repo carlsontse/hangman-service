@@ -12,11 +12,19 @@ import org.springframework.stereotype.Service
 @Service
 class HangmanService {
 
-    // For now just implement in memory storage of games. This list resets when the service shuts down.
-    val games: HashMap<String, Game> = HashMap()
     val LOGGER: Logger = LoggerFactory.getLogger(HangmanService::class.java)
     final val DEFAULT_MAX_NUM_GUESSES: Int = 10
 
+    // For now just implement in memory storage of games. This list resets when the service shuts down.
+    val games: HashMap<String, Game> = HashMap()
+
+    /**
+     * Create a new game
+     * @param sessionId unique player id
+     * @param maxNumberOfGuessesInput set the max number of guesses
+     * @param secretWordInput set the secret word
+     * @return new instance of Hangman game
+     */
     fun createNewGame(sessionId: String, maxNumberOfGuessesInput: Int?, secretWordInput: String?): Game {
 
         var maxNumberOfGuesses = maxNumberOfGuessesInput
@@ -27,9 +35,8 @@ class HangmanService {
         }
 
         if (secretWordInput == null) {
-            // randomly generate a word or hardcode for now TODO: instructions say read from file but can fallback as well to
-                // a library
-            secretWord = "carlson"
+            // TODO: instructions say read from file on server, for now intentionally hardcoding
+            secretWord = "hangman"
         } else {
             secretWord = secretWordInput
         }
@@ -55,6 +62,7 @@ class HangmanService {
      * @param id Unique identifier for the game
      * @param sessionId Unique session identifier. Could indicate a new player. If null just return the game.
      * @throws GameNotFoundException
+     * @return Game that contains the specified id
      */
     fun getGame(id: String, sessionId: String?): Game {
         // look up in db
@@ -72,11 +80,20 @@ class HangmanService {
     }
 
     /**
-     * Get all the games.
-     * TODO: can support filtering
+     * Get the games
+     * @param isActive filter by active games only
+     * @return stored games
      */
     fun getGames(isActive: Boolean): ArrayList<Game> =
-        ArrayList(games.values)
+        ArrayList(games.values.filter {
+            if (isActive) {
+                // return only active games
+                !it.isGameOver()
+            } else {
+                // return everything
+                true
+            }
+        })
 
     /**
      * Perform a guess
@@ -84,6 +101,7 @@ class HangmanService {
      * @param gameId unique identifier for the game
      * @param sessionId unique identifier for the player
      * @throws DuplicateWrongGuessException
+     * @return Game with the new guess applied (if valid)
      */
     //TODO: think of some multi threading cases regarding the players and guessing!!
     fun guess(guessLetter: Char, gameId: String, sessionId: String): Game {

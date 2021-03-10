@@ -93,8 +93,6 @@
     <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot-starter-actuator:2.4.3" level="project" />
     <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot-actuator-autoconfigure:2.4.3" level="project" />
     <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot-actuator:2.4.3" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.11.4" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.11.4" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.11.4" level="project" />
     <orderEntry type="library" name="Maven: io.micrometer:micrometer-core:1.6.4" level="project" />
     <orderEntry type="library" name="Maven: org.hdrhistogram:HdrHistogram:2.1.12" level="project" />
@@ -207,5 +205,25 @@
     <orderEntry type="library" scope="TEST" name="Maven: org.ow2.asm:asm-analysis:8.0.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.ow2.asm:asm-tree:8.0.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.jacoco:org.jacoco.report:0.8.6" level="project" />
+    <orderEntry type="library" name="Maven: com.github.dhiraj072:random-word-generator:1.1.0" level="project" />
+    <orderEntry type="library" name="Maven: org.asynchttpclient:async-http-client:2.2.0" level="project" />
+    <orderEntry type="library" name="Maven: org.asynchttpclient:async-http-client-netty-utils:2.2.0" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-buffer:4.1.59.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-codec-http:4.1.59.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-common:4.1.59.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-transport:4.1.59.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-codec:4.1.59.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-handler:4.1.59.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-resolver:4.1.59.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-codec-socks:4.1.59.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-handler-proxy:4.1.59.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-transport-native-epoll:linux-x86_64:4.1.59.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-transport-native-unix-common:4.1.59.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-resolver-dns:4.1.59.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-codec-dns:4.1.59.Final" level="project" />
+    <orderEntry type="library" name="Maven: org.reactivestreams:reactive-streams:1.0.3" level="project" />
+    <orderEntry type="library" name="Maven: com.typesafe.netty:netty-reactive-streams:2.0.0" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.11.4" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.11.4" level="project" />
   </component>
 </module>

@@ -57,21 +57,45 @@ class Game(private val maxNumberOfGuesses: Int,
         activePlayerIndex = 0
     }
 
+    /**
+     * Get the unique game identifier.
+     * @return game guid
+     */
     fun getId() =
         id
 
+    /**
+     * Get the game state.
+     * @return game state
+     */
     fun getState() =
         state
 
+    /**
+     * Get the guessing word tracker.
+     * @return guessing word tracker
+     */
     fun getGuessingWordTracker() =
         guessingWordTracker
 
+    /**
+     * Get the wrong guesses list
+     * @return wrong guesses list
+     */
     fun getWrongGuesses() =
         wrongGuessesList
 
+    /**
+     * Get the number of remaining guesses
+     * @return remaining guesses
+     */
     fun getNumberOfRemainingGuesses() =
         maxNumberOfGuesses - wrongGuessesList.size
 
+    /**
+     * Get the players of the game
+     * @return players of the game
+     */
     fun getPlayers() =
         players
 
@@ -124,7 +148,11 @@ class Game(private val maxNumberOfGuesses: Int,
     private fun anymoreLettersToFind(): Boolean =
         guessingWordTracker.contains(DEFAULT_MASK_CHAR)
 
-    fun hasAlreadyGuessedLetter(guessLetter: Char) =
+    /**
+     * Determine if the letter already been guessed
+     * @return true - letter is already guessed, false - letter is not already guessed
+     */
+    fun hasAlreadyGuessedLetter(guessLetter: Char): Boolean =
         wrongGuessesList.stream().anyMatch{ t -> t.guessLetter == guessLetter}
 
     private fun addWrongGuess(guessLetter: Char, sessionId: String) {
@@ -146,6 +174,10 @@ class Game(private val maxNumberOfGuesses: Int,
         endTimeMs = System.currentTimeMillis()
     }
 
+    /**
+     * Determine whether the game is over
+     * @return true - game is over, false - game is in progress
+     */
     fun isGameOver(): Boolean =
         state == GameState.GAME_OVER_LOSS || state == GameState.GAME_OVER_WIN
 
